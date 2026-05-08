@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Pilah Sampah</title>
+
+<style>
+    body{
+        margin:0;
+        overflow:hidden;
+        font-family:Arial, sans-serif;
+        background:linear-gradient(to bottom,#87CEEB,#E0F7FA);
+        text-align:center;
+    }
+
+    h1{
+        margin-top:10px;
+        color:#1b4332;
+    }
+
+    #info{
+        display:flex;
+        justify-content:center;
+        gap:50px;
+        font-size:24px;
+        font-weight:bold;
+        margin:10px;
+    }
+
+    #gameArea{
+        position:relative;
+        width:100vw;
+        height:65vh;
+    }
+
+    .trash{
+        position:absolute;
+        width:80px;
+        height:80px;
+        font-size:60px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        cursor:grab;
+        user-select:none;
+    }
+
+    .bin-container{
+        position:fixed;
+        bottom:0;
+        width:100%;
+        display:flex;
+        justify-content:space-around;
+        padding:20px;
+        background:#2d6a4f;
+    }
+
+    .bin{
+        width:220px;
+        height:180px;
+        border-radius:20px;
+        color:white;
+        font-size:28px;
+        font-weight:bold;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 5px 15px rgba(0,0,0,0.3);
+        transition:0.2s;
+    }
+
+    .bin.hover{
+        transform:scale(1.05);
+        background:#52b788 !important;
+    }
+
+    #organic{
+        background:#40916c;
+    }
+
+    #anorganic{
+        background:#1d3557;
+    }
+
+    #gameOver{
+        position:fixed;
+        top:50%;
+        left:50%;
+        transform:translate(-50%,-50%);
+        background:white;
+        padding:40px;
+        border-radius:20px;
+        display:none;
+        box-shadow:0 0 20px rgba(0,0,0,0.4);
+    }
+
+    button{
+        padding:12px 25px;
+        border:none;
+        border-radius:10px;
+        background:#2d6a4f;
+        color:white;
+        font-size:20px;
+        cursor:pointer;
+    }
+
+    button:hover{
+        background:#1b4332;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>♻️ Game Pilah Sampah ♻️</h1>
+
+<div id="info">
+    <div>Skor: <span id="score">0</span></div>
+    <div>Waktu: <span id="time">60</span> detik</div>
+</div>
+
+<div id="gameArea"></div>
+
+<div class="bin-container">
+
+    <div class="bin" id="organic">
+        🌿<br>ORGANIK
+    </div>
+
+    <div class="bin" id="anorganic">
+        🧴<br>ANORGANIK
+    </div>
+
+</div>
+
+<div id="gameOver">
+    <h2>⏰ Waktu Habis!</h2>
+    <h3 id="finalScore"></h3>
+    <button onclick="location.reload()">Main Lagi</button>
+</div>
+
+<script>
+
+const gameArea = document.getElementById("gameArea");
+const scoreText = document.getElementById("score");
+const timeText = document.getElementById("time");
+const finalScore = document.getElementById("finalScore");
+const gameOverBox = document.getElementById("gameOver");
+
+let score = 0;
+let timeLeft = 60;
+let gameEnded = false;
+
+const trashItems = [
+    {emoji:"🍌", type:"organic"},
+    {emoji:"🍎", type:"organic"},
+    {emoji:"🥬", type:"organic"},
+    {emoji:"🧴", type:"anorganic"},
+    {emoji:"🥫", type:"anorganic"},
+    {emoji:"🛍️", type:"anorganic"}
+];
+
+function createTrash(){
+
+    if(gameEnded) return;
+
+    const trash = document.createElement("div");
+    trash.className = "trash";
+
+    const item = trashItems[Math.floor(Math.random()*trashItems.length)];
+
+    trash.innerHTML = item.emoji;
+    trash.dataset.type = item.type;
+
+    trash.style.left = Math.random() * (window.innerWidth - 120) + "px";
+    trash.style.top = Math.random() * 300 + "px";
+
+    trash.draggable = true;
+
+    trash.addEventListener("dragstart", function(e){
+        e.dataTransfer.setData("type", item.type);
+        window.currentTrash = trash;
+    });
+
+    gameArea.appendChild(trash);
+}
+
+setInterval(createTrash, 1200);
+
+const bins = document.querySelectorAll(".bin");
+
+bins.forEach(bin => {
+
+    bin.addEventListener("dragover", function(e){
+        e.preventDefault();
+        bin.classList.add("hover");
+    });
+
+    bin.addEventListener("dragleave", function(){
+        bin.classList.remove("hover");
+    });
+
+    bin.addEventListener("drop", function(e){
+
+        e.preventDefault();
+        bin.classList.remove("hover");
+
+        if(gameEnded) return;
+
+        const trashType = e.dataTransfer.getData("type");
+
+        let benar = false;
+
+        if(bin.id === "organic" && trashType === "organic"){
+            benar = true;
+        }
+
+        if(bin.id === "anorganic" && trashType === "anorganic"){
+            benar = true;
+        }
+
+        if(benar){
+            score += 10;
+        }else{
+            score -= 5;
+        }
+
+        scoreText.innerText = score;
+
+        if(window.currentTrash){
+            window.currentTrash.remove();
+        }
+
+    });
+
+});
+
+const timer = setInterval(() => {
+
+    timeLeft--;
+    timeText.innerText = timeLeft;
+
+    if(timeLeft <= 0){
+
+        clearInterval(timer);
+        gameEnded = true;
+
+        gameOverBox.style.display = "block";
+        finalScore.innerHTML = "Skor Akhir: " + score;
+    }
+
+},1000);
+
+</script>
+
+</body>
+</html>
